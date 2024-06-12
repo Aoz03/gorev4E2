@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sayısal Loto Oyunu</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .container h2 {
+        text-align: center;
+      }
+      .input-group {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      .input-group input {
+        width: 50px;
+        text-align: center;
+        padding: 5px;
+        font-size: 16px;
+      }
+      .buttons {
+        text-align: center;
+        margin-top: 10px;
+      }
+      .buttons button {
+        padding: 10px 20px;
+        font-size: 16px;
+      }
+      #result {
+        margin-top: 20px;
+        text-align: center;
+        font-weight: bold;
+      }
+      .number-box {
+        display: inline-block;
+        width: 50px;
+        height: 50px;
+        margin: 5px;
+        line-height: 50px;
+        border: 1px solid #ccc;
+        border-radius: 50%;
+        text-align: center;
+        font-size: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Sayısal Loto Oyunu</h2>
+      <form id="guessForm">
+        <p>Aşağıdaki inputlara tahminlerinizi giriniz;</p>
+        <div class="input-group">
+          <input type="number" class="guessInput" min="1" max="49" required />
+          <input type="number" class="guessInput" min="1" max="49" required />
+          <input type="number" class="guessInput" min="1" max="49" required />
+          <input type="number" class="guessInput" min="1" max="49" required />
+          <input type="number" class="guessInput" min="1" max="49" required />
+          <input type="number" class="guessInput" min="1" max="49" required />
+        </div>
+        <div class="buttons">
+          <button type="submit" id="guessButton">Tahmin Gir</button>
+          <button type="button" id="drawButton" disabled>Kurayı Çek</button>
+        </div>
+      </form>
+      <div id="result"></div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const guessForm = document.getElementById("guessForm");
+        const guessInputs = document.querySelectorAll(".guessInput");
+        const guessButton = document.getElementById("guessButton");
+        const drawButton = document.getElementById("drawButton");
+        const result = document.getElementById("result");
+        let guesses = [];
+
+        guessForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+
+          guesses = [];
+          let valid = true;
+          let errorMessage = "";
+
+          for (let i = 0; i < guessInputs.length; i++) {
+            const input = guessInputs[i];
+            const value = parseInt(input.value);
+            if (value < 1 || value > 49) {
+              errorMessage = "1-49 sayıları arasında bir sayı girmelisiniz";
+              valid = false;
+              break;
+            }
+            if (guesses.includes(value)) {
+              errorMessage = "Aynı tahmin bir kez girilebilir.";
+              valid = false;
+              break;
+            }
+            guesses.push(value);
+          }
+
+          if (!valid) {
+            alert(errorMessage);
+          } else {
+            guesses.sort((a, b) => a - b);
+            guessInputs.forEach((input, index) => {
+              input.value = guesses[index];
+            });
+            guessButton.disabled = true;
+            drawButton.disabled = false;
+            displayGuesses(guesses);
+          }
+        });
+
+        guessInputs.forEach((input) => {
+          input.addEventListener("blur", () => {
+            const value = parseInt(input.value);
+            if (value < 1 || value > 49) {
+              alert("1-49 sayıları arasında bir sayı girmelisiniz");
+              input.value = "";
+              return;
+            }
+            for (let i = 0; i < guessInputs.length; i++) {
+              const otherInput = guessInputs[i];
+              if (otherInput !== input && otherInput.value === input.value) {
+                alert("Aynı tahmin bir kez girilebilir.");
+                setTimeout(() => {
+                  input.value = "";
+                }, 0);
+                break;
+              }
+            }
+          });
+        });
+
+        drawButton.addEventListener("click", () => {
+          const lotoNumbers = [];
+          while (lotoNumbers.length < 6) {
+            const number = Math.floor(Math.random() * 49) + 1;
+            if (!lotoNumbers.includes(number)) {
+              lotoNumbers.push(number);
+            }
+          }
+
+          lotoNumbers.sort((a, b) => a - b);
+          guesses.sort((a, b) => a - b);
+
+          guessInputs.forEach((input, index) => {
+            input.value = guesses[index];
+          });
+
+          displayResults(guesses, lotoNumbers);
+        });
+      });
+
+      function displayGuesses(guesses) {
+        result.innerHTML = "Tahminler:<br>";
+        guesses.forEach((guess) => {
+          const guessBox = document.createElement("div");
+          guessBox.classList.add("number-box");
+          guessBox.textContent = guess;
+          result.appendChild(guessBox);
+        });
+      }
+
+      function displayResults(guesses, lotoNumbers) {
+        result.innerHTML = `
+                Tahminler: ${guesses.join(", ")}<br>
+                Loto Sayıları: ${lotoNumbers.join(", ")}<br>
+            `;
+        const matches = guesses.filter((value) => lotoNumbers.includes(value));
+        result.innerHTML += `
+                Bilinen Sayılar: ${matches.join(", ")}<br>
+                Bilinen Sayı Adedi: ${matches.length}
+            `;
+        displayNumbers("Tahminler", guesses);
+        displayNumbers("Loto Sayıları", lotoNumbers);
+        displayNumbers("Bilinen Sayılar", matches);
+      }
+
+      function displayNumbers(title, numbers) {
+        const titleElement = document.createElement("div");
+        titleElement.textContent = `${title}:`;
+        result.appendChild(titleElement);
+        numbers.forEach((number) => {
+          const numberBox = document.createElement("div");
+          numberBox.classList.add("number-box");
+          numberBox.textContent = number;
+          result.appendChild(numberBox);
+        });
+        result.appendChild(document.createElement("br"));
+      }
+    </script>
+  </body>
+</html>
